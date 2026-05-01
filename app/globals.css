@@ -1,0 +1,113 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+  --font-heading: var(--font-playfair);
+  --color-risk: var(--risk);
+  --color-risk-light: var(--risk-light);
+  --color-risk-mid: var(--risk-mid);
+  --color-navy: var(--navy);
+  --color-navy-light: var(--navy-light);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-ring: var(--ring);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --background: #f7f6f2;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --border: #e2ddd5;
+  --border2: #ccc8bf;
+  --input: #e2ddd5;
+  --ring: #c0392b;
+  --muted: #f0ede6;
+  --muted-foreground: #5a5751;
+  --risk: #c0392b;
+  --risk-light: #fdf0ee;
+  --risk-mid: #f5c0bb;
+  --risk-dim: #8b2418;
+  --safe: #1a6b3c;
+  --safe-light: #edf7f1;
+  --amber: #b45309;
+  --amber-light: #fef3e2;
+  --navy: #1a3a5c;
+  --navy-light: #eaf0f7;
+  --navy-mid: #b8cfe3;
+  --navy-bg: #0f1e2e;
+  --radius: 0.625rem;
+  --primary: #c0392b;
+  --primary-foreground: #ffffff;
+  --secondary: #f0ede6;
+  --secondary-foreground: #1a1a1a;
+  --accent: #eaf0f7;
+  --accent-foreground: #1a3a5c;
+  --destructive: #c0392b;
+  --destructive-foreground: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), 'Inter', sans-serif;
+    line-height: 1.7;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-playfair), 'Playfair Display', serif;
+  }
+}
+
+@keyframes ecg-draw {
+  0% { stroke-dashoffset: 600; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 1; }
+  70% { transform: scale(1.3); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 4px; }
+  50% { height: 24px; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ecg-path {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: ecg-draw 2s ease-in-out infinite;
+}
+
+.pulse-dot {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+.wave-bar {
+  animation: waveform 0.6s ease-in-out infinite;
+  animation-delay: var(--delay, 0ms);
+}
