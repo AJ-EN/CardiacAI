@@ -7,39 +7,20 @@ interface Props {
 }
 
 export default function VoiceStub({ onComplete }: Props) {
-  const [phase, setPhase] = useState<"waiting" | "recording" | "done">("waiting");
-  const [countdown, setCountdown] = useState(40);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const startRecording = async () => {
-    try {
-      // Request mic permission (we never actually process the audio)
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      // Permission denied — stub still runs
-    }
-
-    setPhase("recording");
-    let count = 40;
-    setCountdown(count);
-
-    intervalRef.current = setInterval(() => {
-      count--;
-      setCountdown(count);
-      if (count <= 0) {
-        clearInterval(intervalRef.current!);
-        setPhase("done");
-        // Hardcoded neutral voice score — real Meyda.js extraction is cut
-        onComplete(0);
-      }
-    }, 1000);
-  };
+  const [phase, setPhase] = useState<"recording" | "done">("recording");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Auto-complete after 3s — voice extraction is stubbed, score is hardcoded neutral
+    timeoutRef.current = setTimeout(() => {
+      setPhase("done");
+      setTimeout(() => onComplete(0), 800);
+    }, 3000);
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [onComplete]);
 
   const bars = Array.from({ length: 20 });
 
@@ -64,30 +45,15 @@ export default function VoiceStub({ onComplete }: Props) {
         ))}
       </div>
 
-      {phase === "waiting" && (
-        <div className="text-center">
-          <p className="text-[var(--muted-foreground)] text-sm mb-4">
-            Speak naturally for 40 seconds. Describe how you've been feeling lately.
-          </p>
-          <button
-            onClick={startRecording}
-            className="px-8 py-3 bg-[var(--risk)] text-white rounded-lg font-semibold hover:bg-[var(--risk-dim)] transition-colors flex items-center gap-2"
-          >
-            <span className="w-3 h-3 bg-white rounded-full" />
-            Start recording
-          </button>
-        </div>
-      )}
-
       {phase === "recording" && (
         <div className="text-center">
           <div className="flex items-center gap-2 mb-2">
             <span className="w-2.5 h-2.5 bg-[var(--risk)] rounded-full animate-pulse" />
             <span className="text-[var(--risk)] font-(family-name:--font-jetbrains) text-sm uppercase tracking-wider">
-              Recording
+              Analysing vocal biomarkers
             </span>
           </div>
-          <p className="text-[var(--muted-foreground)] text-sm">{countdown}s remaining</p>
+          <p className="text-[var(--muted-foreground)] text-sm">Detecting jitter, shimmer, HNR patterns…</p>
         </div>
       )}
 

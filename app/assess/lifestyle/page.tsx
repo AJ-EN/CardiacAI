@@ -52,8 +52,8 @@ export default function LifestylePage() {
 
   return (
     <StepLayout
-      step={5}
-      total={6}
+      step={4}
+      total={5}
       title="Lifestyle factors"
       subtitle="Tap to select — takes about 30 seconds."
     >

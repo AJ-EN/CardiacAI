@@ -26,8 +26,8 @@ export default function GenomePage() {
 
   return (
     <StepLayout
-      step={4}
-      total={6}
+      step={3}
+      total={5}
       title="Genetic variants"
       subtitle="Upload a 23andMe file to screen for South-Asian-specific cardiac variants via AlphaMissense (DeepMind, 71M predictions)."
     >

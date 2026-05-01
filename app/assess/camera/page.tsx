@@ -10,13 +10,13 @@ export default function CameraPage() {
 
   const handleComplete = (vitals: { heartRate: number; hrv: number }) => {
     saveAssessment({ vitals });
-    setTimeout(() => router.push("/assess/voice"), 800);
+    setTimeout(() => router.push("/assess/genome"), 800);
   };
 
   return (
     <StepLayout
       step={2}
-      total={6}
+      total={5}
       title="30-second face scan"
       subtitle="We read your heart rate and HRV from subtle colour changes in your skin — no wearable needed."
     >

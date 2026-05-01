@@ -45,7 +45,7 @@ export default function ProteinViewer({ uniprotId, residuePosition, label }: Pro
         } else {
           // Fallback: fetch from AlphaFold EBI (may be slow, for non-demo paths)
           const afResponse = await fetch(
-            `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.pdb`
+            `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v6.pdb`
           );
           pdbData = await afResponse.text();
         }

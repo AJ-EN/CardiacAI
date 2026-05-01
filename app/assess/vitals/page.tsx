@@ -21,7 +21,7 @@ export default function VitalsPage() {
   return (
     <StepLayout
       step={1}
-      total={6}
+      total={5}
       title="Your health markers"
       subtitle="Pre-filled with normal values — change anything that differs for you."
     >
