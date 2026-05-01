@@ -129,9 +129,6 @@ export default function GenomeUpload({ onComplete, onSkip }: Props) {
             Use demo genome (1000 Genomes · GIH)
           </button>
 
-          <button onClick={onSkip} className="text-[var(--muted-foreground)] text-sm underline">
-            Skip — no genome file
-          </button>
         </>
       )}
 
