@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId, cloneElement, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import StepLayout from "@/components/StepLayout";
 import { saveAssessment, RAMESH_DEFAULTS, type BasicMarkers } from "@/lib/store";
@@ -131,13 +131,17 @@ export default function VitalsPage() {
 const inputClass =
   "w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-white text-[var(--foreground)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--risk)] focus:border-transparent";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
+  const id = useId();
   return (
     <div>
-      <label className="block text-xs font-(family-name:--font-jetbrains) uppercase tracking-wider text-[var(--muted-foreground)] mb-1">
+      <label
+        htmlFor={id}
+        className="block text-xs font-(family-name:--font-jetbrains) uppercase tracking-wider text-[var(--muted-foreground)] mb-1"
+      >
         {label}
       </label>
-      {children}
+      {cloneElement(children, { id })}
     </div>
   );
 }
