@@ -8,6 +8,32 @@ import { RAMESH_FALLBACK, RAMESH_TTS_HINDI } from "@/lib/ramesh-fallback";
 import { speakHindi } from "@/lib/tts";
 import dynamic from "next/dynamic";
 
+// Animates a number from 0 to target with easeOutCubic, after an optional delay
+function useCountUp(target: number, duration: number, delay = 0): number {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    let startTime: number | null = null;
+    const startTimeout = setTimeout(() => {
+      const animate = (t: number) => {
+        if (startTime === null) startTime = t;
+        const elapsed = t - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCurrent(target * eased);
+        if (progress < 1) raf = requestAnimationFrame(animate);
+        else setCurrent(target);
+      };
+      raf = requestAnimationFrame(animate);
+    }, delay);
+    return () => {
+      clearTimeout(startTimeout);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [target, duration, delay]);
+  return current;
+}
+
 const ProteinViewer = dynamic(() => import("@/components/ProteinViewer"), { ssr: false });
 
 const RISK_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -47,10 +73,20 @@ export default function ResultsPage() {
     }
   }, [result, ttsPlayed]);
 
+  // Animated counters: Framingham first (fast), pause, then CardiacAI (slower, weighted)
+  const framinghamAnim = useCountUp(result?.framingham_score ?? 0, 700, 300);
+  const cardiacaiAnim = useCountUp(result?.cardiacai_score ?? 0, 1800, 1300);
+
   if (!result) return null;
 
   const framing = RISK_LABELS[result.risk_tier] ?? RISK_LABELS.high;
   const primaryFinding = result.top_findings[0];
+
+  const framinghamDisplay = Math.round(framinghamAnim);
+  const cardiacaiDisplay = Math.round(cardiacaiAnim);
+  const gapPoints = result.cardiacai_score - result.framingham_score;
+  // Gap visualization fades in once CardiacAI counter has finished (~3.1s after mount)
+  const gapVisible = cardiacaiAnim >= result.cardiacai_score - 0.5;
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
@@ -81,8 +117,8 @@ export default function ResultsPage() {
               <p className="font-(family-name:--font-jetbrains) text-xs uppercase tracking-wider text-[var(--muted-foreground)] mb-3">
                 Framingham says
               </p>
-              <p className="font-(family-name:--font-playfair) text-6xl font-black text-[var(--safe)] leading-none mb-2">
-                {result.framingham_score}
+              <p className="font-(family-name:--font-playfair) text-6xl font-black text-[var(--safe)] leading-none mb-2 tabular-nums">
+                {framinghamDisplay}
                 <span className="text-2xl">%</span>
               </p>
               <p className="font-(family-name:--font-jetbrains) text-sm font-bold text-[var(--safe)] uppercase tracking-wider">
@@ -102,10 +138,14 @@ export default function ResultsPage() {
                 CardiacAI says
               </p>
               <p
-                className="font-(family-name:--font-playfair) text-6xl font-black leading-none mb-2"
-                style={{ color: framing.color }}
+                className="font-(family-name:--font-playfair) text-6xl font-black leading-none mb-2 tabular-nums"
+                style={{
+                  color: framing.color,
+                  textShadow: gapVisible ? `0 0 24px ${framing.color}40` : "none",
+                  transition: "text-shadow 600ms ease-out",
+                }}
               >
-                {result.cardiacai_score}
+                {cardiacaiDisplay}
               </p>
               <p
                 className="font-(family-name:--font-jetbrains) text-sm font-bold uppercase tracking-wider"
@@ -119,8 +159,74 @@ export default function ResultsPage() {
             </div>
           </div>
 
+          {/* ── Animated risk-axis gap visualization ── */}
+          <div className="mt-6 px-1">
+            <div className="flex justify-between items-baseline mb-2">
+              <span className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-[2px] text-[var(--safe)]">
+                Western reading
+              </span>
+              <span
+                className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-[2px] transition-opacity duration-700"
+                style={{
+                  color: "var(--risk)",
+                  opacity: gapVisible ? 1 : 0,
+                }}
+              >
+                +{gapPoints} risk points missed
+              </span>
+              <span className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-[2px] text-[var(--risk)]">
+                CardiacAI reading
+              </span>
+            </div>
+
+            {/* Track */}
+            <div className="relative h-2 bg-[var(--border)] rounded-full overflow-hidden">
+              {/* Framingham → CardiacAI gradient bar that animates wider */}
+              <div
+                className="absolute top-0 left-0 h-full rounded-full"
+                style={{
+                  width: `${cardiacaiAnim}%`,
+                  background:
+                    "linear-gradient(90deg, var(--safe) 0%, var(--amber) 50%, var(--risk) 100%)",
+                  transition: "none",
+                }}
+              />
+              {/* Framingham tick */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-[var(--safe)] rounded-full shadow-[0_0_8px_var(--safe)]"
+                style={{
+                  left: `calc(${framinghamAnim}% - 2px)`,
+                  transition: "none",
+                }}
+              />
+              {/* CardiacAI tick */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-[var(--risk)] rounded-full shadow-[0_0_12px_var(--risk)]"
+                style={{
+                  left: `calc(${cardiacaiAnim}% - 2px)`,
+                  transition: "none",
+                }}
+              />
+            </div>
+
+            <div className="flex justify-between mt-1.5">
+              <span className="font-(family-name:--font-jetbrains) text-[10px] tabular-nums text-[var(--muted-foreground)]">
+                0
+              </span>
+              <span className="font-(family-name:--font-jetbrains) text-[10px] tabular-nums text-[var(--muted-foreground)]">
+                100
+              </span>
+            </div>
+          </div>
+
           {/* Gap explanation */}
-          <div className="mt-4 p-4 rounded-lg border border-[var(--risk-mid)] bg-[var(--risk-light)]">
+          <div
+            className="mt-6 p-4 rounded-lg border border-[var(--risk-mid)] bg-[var(--risk-light)] transition-all duration-700"
+            style={{
+              opacity: gapVisible ? 1 : 0,
+              transform: gapVisible ? "translateY(0)" : "translateY(8px)",
+            }}
+          >
             <p className="text-[var(--risk-dim)] text-sm leading-relaxed">
               <strong className="text-[var(--risk)]">&quot;Same patient. Two scores. One of them is true.&quot;</strong>
               {" "}{result.gap_explanation}

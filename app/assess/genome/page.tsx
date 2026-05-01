@@ -19,11 +19,6 @@ export default function GenomePage() {
     setTimeout(() => router.push("/assess/lifestyle"), 1000);
   };
 
-  const handleSkip = () => {
-    saveAssessment({ variants: [] });
-    router.push("/assess/lifestyle");
-  };
-
   return (
     <StepLayout
       step={3}
@@ -32,7 +27,7 @@ export default function GenomePage() {
       subtitle="Upload a 23andMe file to screen for South-Asian-specific cardiac variants via AlphaMissense (DeepMind, 71M predictions)."
     >
       <div className="w-full flex flex-col items-center gap-6">
-        <GenomeUpload onComplete={handleComplete} onSkip={handleSkip} />
+        <GenomeUpload onComplete={handleComplete} />
 
         <div className="w-full border border-[var(--border)] rounded-lg p-4 bg-[var(--risk-light)]">
           <p className="text-xs font-(family-name:--font-jetbrains) uppercase tracking-wider text-[var(--risk)] mb-2">
