@@ -34,3 +34,19 @@ next-env.d.ts
 
 # leftover scaffold folder
 /cardiacai-temp/
+
+# ── Proprietary / Moat (DO NOT commit to public repo) ──────────
+# AI agent system prompt — the core differentiator
+lib/agent-prompt.ts
+
+# South-Asian-calibrated risk scoring algorithm + gene weights
+lib/risk-calculator.ts
+
+# rPPG signal processing engine (CHROM, FFT, bandpass, HRV)
+lib/rppg-engine.ts
+
+# Pre-cached demo data with exact calibration values
+lib/ramesh-fallback.ts
+
+# Full strategy, architecture, gene weights, calibration logic
+CLAUDE.md
