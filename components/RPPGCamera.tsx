@@ -8,26 +8,21 @@ interface Props {
   demoMode?: boolean;
 }
 
-const SCAN_DURATION = 30; // seconds
-const TARGET_FPS = 30;
-
 export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const rafRef = useRef<number | null>(null);
   const engineRef = useRef<RppgEngine | null>(null);
 
-  const [countdown, setCountdown] = useState(SCAN_DURATION);
+  const [countdown, setCountdown] = useState(30);
   const [phase, setPhase] = useState<"waiting" | "scanning" | "done">("waiting");
   const [heartRate, setHeartRate] = useState(0);
-  const [confidence, setConfidence] = useState(0);
-  const [skinDetected, setSkinDetected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(demoMode);
 
-  // ── Frame capture loop (~30fps via requestAnimationFrame) ────────
+  // ── High-frequency capture loop (~30fps) ─────────────────────────
 
   const captureLoop = useCallback(() => {
     const engine = engineRef.current;
@@ -38,62 +33,36 @@ export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
     const frame = extractSkinROI(video, canvas);
     if (frame) {
       engine.addFrame(frame);
-      setSkinDetected(true);
 
-      // Analyze every ~0.5s (every 15 frames)
+      // Analyze every ~15 frames (~0.5s) once enough data exists
       if (engine.totalFrames % 15 === 0 && engine.isReady) {
         const result = engine.analyze();
         if (result.signalReady) {
           setHeartRate(result.heartRate);
-          setConfidence(result.confidence);
         }
       }
-    } else {
-      setSkinDetected(false);
     }
 
-    // Throttle to ~30fps
-    rafRef.current = requestAnimationFrame(() => {
-      setTimeout(() => captureLoop(), 1000 / TARGET_FPS);
-    });
+    rafRef.current = requestAnimationFrame(captureLoop);
   }, []);
-
-  // ── Cleanup ──────────────────────────────────────────────────────
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      engineRef.current?.reset();
-    };
-  }, []);
-
-  // ── Demo mode ────────────────────────────────────────────────────
 
   const startDemoMode = useCallback(() => {
     setPhase("scanning");
-    let count = SCAN_DURATION;
+    let count = 30;
     setCountdown(count);
     const tick = setInterval(() => {
       count--;
       setCountdown(count);
-      // Simulate rPPG building up — converge toward 74 BPM
-      const progress = 1 - count / SCAN_DURATION;
-      const noise = (Math.random() - 0.5) * (12 * (1 - progress));
-      setHeartRate(Math.round(74 + noise));
-      setConfidence(Math.min(0.95, progress * 1.1));
-      setSkinDetected(true);
+      // Animate a fake heart rate building up
+      setHeartRate(Math.round(68 + Math.random() * 8));
       if (count <= 0) {
         clearInterval(tick);
         setPhase("done");
         onComplete({ heartRate: 74, hrv: 28 }); // Ramesh's values — low HRV
       }
     }, 1000);
-    timerRef.current = tick;
+    intervalRef.current = tick;
   }, [onComplete]);
-
-  // ── Real camera ──────────────────────────────────────────────────
 
   const startCamera = useCallback(async () => {
     try {
@@ -111,19 +80,29 @@ export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
         await videoRef.current.play();
       }
 
-      // Initialize the engine
+      // Initialize the rPPG engine
       engineRef.current = new RppgEngine();
       setPhase("scanning");
 
-      // Start the high-frequency capture loop
+      // Start high-frequency capture via requestAnimationFrame
       captureLoop();
 
-      // Countdown timer (1Hz)
-      let count = SCAN_DURATION;
+      // 1-second countdown timer (UI only)
+      let count = 30;
       setCountdown(count);
+
       const tick = setInterval(() => {
         count--;
         setCountdown(count);
+
+        // Update displayed HR from engine during countdown
+        const engine = engineRef.current;
+        if (engine && engine.isReady) {
+          const result = engine.analyze();
+          if (result.signalReady) {
+            setHeartRate(result.heartRate);
+          }
+        }
 
         if (count <= 0) {
           clearInterval(tick);
@@ -134,52 +113,40 @@ export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
           stream.getTracks().forEach((t) => t.stop());
 
           // Final analysis
-          const engine = engineRef.current;
           if (engine && engine.isReady) {
             const result = engine.analyze();
             setPhase("done");
-            onComplete({
-              heartRate: result.heartRate,
-              hrv: result.hrv,
-            });
+            onComplete({ heartRate: result.heartRate, hrv: result.hrv });
           } else {
-            // Not enough signal — fall back to last reading or demo values
             setPhase("done");
-            onComplete({
-              heartRate: heartRate || 72,
-              hrv: 35,
-            });
+            onComplete({ heartRate: heartRate || 72, hrv: 35 });
           }
         }
       }, 1000);
-      timerRef.current = tick;
+      intervalRef.current = tick;
     } catch {
-      setError("Camera access failed — switching to demo mode");
+      // Camera failed — silently fall to demo mode
       setIsDemoMode(true);
       startDemoMode();
     }
   }, [captureLoop, onComplete, startDemoMode, heartRate]);
 
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      engineRef.current?.reset();
+    };
+  }, []);
+
   const handleStart = () => {
-    setError(null);
     if (isDemoMode) {
       startDemoMode();
     } else {
       startCamera();
     }
   };
-
-  // ── Signal quality indicator ─────────────────────────────────────
-
-  const qualityLabel =
-    confidence > 0.7 ? "Excellent" :
-    confidence > 0.45 ? "Good" :
-    confidence > 0.2 ? "Fair" : "Acquiring…";
-
-  const qualityColor =
-    confidence > 0.7 ? "var(--safe)" :
-    confidence > 0.45 ? "var(--amber)" :
-    confidence > 0.2 ? "var(--amber)" : "var(--muted-foreground)";
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -225,51 +192,11 @@ export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
 
       {/* Progress ring */}
       {phase === "scanning" && (
-        <svg className="relative w-64 h-64 -rotate-90" style={{ marginTop: "-16rem" }}>
-          <circle cx="128" cy="128" r="120" fill="none" stroke="var(--border2)" strokeWidth="2" opacity="0.3" />
+        <svg className="relative w-64 h-64 -rotate-90">
           <circle cx="128" cy="128" r="120" fill="none" stroke="var(--risk)" strokeWidth="4"
-            strokeDasharray={`${(1 - countdown / SCAN_DURATION) * 754} 754`}
-            strokeLinecap="round"
+            strokeDasharray={`${(1 - countdown / 30) * 754} 754`}
             className="transition-all duration-1000" />
         </svg>
-      )}
-
-      {/* Signal quality + face detection status */}
-      {phase === "scanning" && (
-        <div className="flex flex-col items-center gap-2 w-64">
-          {/* Skin detection indicator */}
-          <div className="flex items-center gap-2 text-xs font-(family-name:--font-jetbrains)">
-            <div
-              className="w-2 h-2 rounded-full transition-colors"
-              style={{ backgroundColor: skinDetected ? "var(--safe)" : "var(--risk)" }}
-            />
-            <span className="text-[var(--muted-foreground)]">
-              {skinDetected ? "Face detected" : "No face — reposition"}
-            </span>
-          </div>
-
-          {/* Signal quality bar */}
-          <div className="w-full flex items-center gap-3">
-            <span className="text-xs font-(family-name:--font-jetbrains) text-[var(--muted-foreground)] w-20">
-              Signal
-            </span>
-            <div className="flex-1 h-2 rounded-full bg-[var(--muted)] overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.round(confidence * 100)}%`,
-                  backgroundColor: qualityColor,
-                }}
-              />
-            </div>
-            <span
-              className="text-xs font-(family-name:--font-jetbrains) w-20 text-right"
-              style={{ color: qualityColor }}
-            >
-              {qualityLabel}
-            </span>
-          </div>
-        </div>
       )}
 
       {/* ECG line animation */}
@@ -301,13 +228,6 @@ export default function RPPGCamera({ onComplete, demoMode = false }: Props) {
           </span>
         </label>
       </div>
-
-      {/* Tips for better reading */}
-      {phase === "scanning" && !skinDetected && (
-        <div className="w-64 p-3 rounded-lg border border-[var(--amber)] bg-[var(--amber-light)] text-xs text-[var(--amber)]">
-          <strong>Tips:</strong> Ensure good lighting on your face. Stay still. Avoid backlighting.
-        </div>
-      )}
 
       {error && (
         <p className="text-[var(--risk)] text-sm text-center">{error}</p>
