@@ -4,6 +4,12 @@ CardiacAI is a Next.js prototype for South-Asian-calibrated cardiovascular risk 
 
 The app is framed as a screening signal, not a diagnosis. Its primary demo story is the same patient receiving two different readings: low risk from a Western-cohort calculator and high risk from CardiacAI because of South-Asian-specific genomic and biometric signals.
 
+## Origin
+
+CardiacAI was inspired by *The Brown Heart* on JioHotstar. The project began from the question the documentary raises for South Asian families: why are so many cardiac risks detected too late, and why do standard tools often miss the biology and lived context of this population?
+
+That idea became a prototype for combining standard clinical markers, camera-based biometrics, genomic variant screening, South Asian risk calibration, and patient-facing AI explanations in one flow.
+
 ## What the app does
 
 - Collects standard health markers: age, sex, blood pressure, cholesterol, BMI, smoking, BP medication, and diabetes status.
