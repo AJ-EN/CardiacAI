@@ -21,7 +21,7 @@ export default function LandingPage() {
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-2xl mx-auto">
         <p className="font-(family-name:--font-jetbrains) text-xs text-[#3d5a78] uppercase tracking-[4px] mb-8">
-          DevSummit 2026 · Bio Tech Track
+          Gemma 4 Good Hackathon · Health & Sciences
         </p>
 
         <h1 className="font-(family-name:--font-playfair) text-[clamp(48px,10vw,80px)] font-black leading-[1.02] tracking-tight mb-6 text-white">
@@ -51,6 +51,12 @@ export default function LandingPage() {
         <p className="text-[#3d5a78] text-xs mt-4 font-(family-name:--font-jetbrains)">
           No login · No download · 5 minutes
         </p>
+
+        <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5">
+          <span className="text-[10px] font-(family-name:--font-jetbrains) text-[#3d5a78] uppercase tracking-[2px]">
+            Powered by Google Gemma 4 via Ollama · 100% Local
+          </span>
+        </div>
       </div>
 
       {/* Stats bar */}
@@ -70,7 +76,7 @@ export default function LandingPage() {
 
       {/* Footer line */}
       <div className="text-center py-4 font-(family-name:--font-jetbrains) text-xs text-[#3d5a78] border-t border-white/5">
-        Screening signal · Not a diagnosis · Same category as Apple Watch ECG
+        Screening signal · Not a diagnosis · Powered by Gemma 4 · Local AI
       </div>
     </main>
   );

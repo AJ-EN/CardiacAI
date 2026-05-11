@@ -68,7 +68,8 @@ export default function ResultsPage() {
     if (result && !ttsPlayed) {
       setTtsPlayed(true);
       setTimeout(() => {
-        speakHindi(RAMESH_TTS_HINDI);
+        // Prefer Gemma 4's generated Hindi text, fall back to hardcoded Ramesh TTS
+        speakHindi(result.tts_hindi || RAMESH_TTS_HINDI);
       }, 1200);
     }
   }, [result, ttsPlayed]);
@@ -97,7 +98,7 @@ export default function ResultsPage() {
         </Link>
         <button
           type="button"
-          onClick={() => speakHindi(RAMESH_TTS_HINDI)}
+          onClick={() => speakHindi(result.tts_hindi || RAMESH_TTS_HINDI)}
           className="text-xs font-(family-name:--font-jetbrains) text-[var(--navy-mid)] hover:text-white transition-colors uppercase tracking-wider"
         >
           ▶ Listen in Hindi
@@ -358,8 +359,11 @@ export default function ResultsPage() {
 
         {/* ── Disclaimer + restart ── */}
         <div className="text-center pb-8">
-          <p className="text-[var(--muted-foreground)] text-xs mb-6 max-w-md mx-auto leading-relaxed">
+          <p className="text-[var(--muted-foreground)] text-xs mb-3 max-w-md mx-auto leading-relaxed">
             CardiacAI is a screening signal, not a diagnosis. It is in the same category as Apple Watch ECG — it tells you to show this to a doctor, not that you have a condition.
+          </p>
+          <p className="text-[var(--muted-foreground)] text-[10px] font-(family-name:--font-jetbrains) uppercase tracking-[2px] mb-6">
+            Powered by Google Gemma 4 via Ollama · Local AI · Your data never leaves your device
           </p>
           <Link
             href="/"
