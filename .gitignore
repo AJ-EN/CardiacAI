@@ -8,7 +8,7 @@
 /out/
 /build
 
-# env — never commit secrets
+# env — local overrides (no secrets needed for Ollama)
 .env
 .env.local
 .env*.local

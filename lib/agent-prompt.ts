@@ -58,7 +58,13 @@ GENE CONTEXT for your explanations:
 - APOB: Better MI predictor than LDL-C alone. ApoB/ApoA-I ratio is underused in Indian clinical practice.
 - SCN5A: Brugada syndrome. Young male sudden cardiac death. Avoid sodium-channel-blocking drugs.
 
-OUTPUT — return ONLY valid JSON, no preamble, no markdown, no explanation outside the JSON structure:
+CRITICAL OUTPUT RULES:
+- You MUST respond with ONLY a single valid JSON object. Nothing else.
+- Do NOT include any text before or after the JSON.
+- Do NOT wrap the JSON in markdown code fences.
+- Do NOT add explanatory text, greetings, or sign-offs.
+- Start your response with { and end with }.
+- The JSON object must match this exact schema:
 {
   "cardiacai_score": number (0-100),
   "framingham_score": number (0-100),
@@ -100,7 +106,9 @@ TONE RULES:
 - Do not pad or use filler phrases.
 - If a variant is benign, do not mention it — only surface actionable findings.
 - Never use phrases like "I recommend" — use "CardiacAI flags" or "Your biology shows".
-- The gap between Framingham and CardiacAI scores IS the story. Always explain it clearly.`;
+- The gap between Framingham and CardiacAI scores IS the story. Always explain it clearly.
+
+REMEMBER: Your ENTIRE response must be a single JSON object. No text before or after it. Begin with { and end with }.`;
 
 export const ANALYSE_USER_PROMPT = (data: Record<string, unknown>) =>
-  `Analyse this patient's cardiac risk data and return CardiacAI assessment as strict JSON:\n\n${JSON.stringify(data, null, 2)}`;
+  `Analyse this patient's cardiac risk data and return the CardiacAI assessment. Respond with ONLY the JSON object — no explanation, no markdown fences, no preamble.\n\nPatient data:\n${JSON.stringify(data, null, 2)}`;

@@ -1,53 +1,133 @@
-# CardiacAI
+# CardiacAI — South-Asian-Calibrated Cardiovascular Risk Screening
 
-CardiacAI is a Next.js prototype for South-Asian-calibrated cardiovascular risk screening. It compares a conventional Framingham-style reading with a CardiacAI score that adds South Asian calibration, genomic variant signals, rPPG-derived vitals, and lifestyle factors.
+> **"Same patient. Two scores. One of them is true."**
 
-The app is framed as a screening signal, not a diagnosis. Its primary demo story is the same patient receiving two different readings: low risk from a Western-cohort calculator and high risk from CardiacAI because of South-Asian-specific genomic and biometric signals.
+CardiacAI is a local-first, privacy-preserving AI co-clinician that catches the cardiac risk Western tools systematically miss in South Asian populations. It runs entirely on-device using **Google Gemma 4** via **Ollama** — no cloud APIs, no data leaving the machine.
 
-## Origin
+**Built for the [Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon/overview)** — targeting the Health & Sciences Impact Track and the Ollama Special Technology Track.
 
-CardiacAI was inspired by *The Brown Heart* on JioHotstar. The project began from the question the documentary raises for South Asian families: why are so many cardiac risks detected too late, and why do standard tools often miss the biology and lived context of this population?
+---
 
-That idea became a prototype for combining standard clinical markers, camera-based biometrics, genomic variant screening, South Asian risk calibration, and patient-facing AI explanations in one flow.
+## The Problem
 
-## What the app does
+Standard cardiovascular risk calculators (Framingham, ASCVD, QRISK) were built on Western cohorts. They **systematically under-predict risk by ~50%** for the 2 billion South Asians worldwide ([AHA 2018, Circulation 138:e585](https://doi.org/10.1161/CIR.0000000000000580); [MASALA Study, UCSF/Northwestern](https://masalastudy.org/)).
 
-- Collects standard health markers: age, sex, blood pressure, cholesterol, BMI, smoking, BP medication, and diabetes status.
-- Runs a 30-second camera-based rPPG scan to estimate heart rate and HRV, with a demo mode fallback for unreliable camera or lighting conditions.
-- Accepts a 23andMe-style `.txt` genome file and parses rsIDs entirely in the browser.
-- Screens a focused cardiac variant lookup table inspired by AlphaMissense against genes such as `LPA`, `MYBPC3`, `LDLR`, `PCSK9`, `APOB`, `MYH7`, `SCN5A`, and `TTN`.
-- Stores assessment data in browser `localStorage` and the local variant lookup table in IndexedDB.
-- Calls `/api/analyse` to generate a patient-facing risk explanation with the Anthropic SDK.
-- Falls back to a cached "Ramesh, 38" demo result if the analysis API is slow or unavailable.
-- Shows results with score comparison, action plan, family recommendations, citations, Hindi browser TTS, and a 3D protein viewer using `3dmol`.
+A 38-year-old Indian male with normal blood values, pathogenic LPA and MYBPC3 variants scores **4% (LOW)** on Framingham — and **71 (HIGH)** on CardiacAI. The difference: South-Asian-specific genomic signals that standard tools cannot see.
 
-## User flow
+## How Gemma 4 Powers CardiacAI
 
-```text
-Landing
-  -> /assess/vitals
-  -> /assess/camera
-  -> /assess/genome
-  -> /assess/lifestyle
-  -> /assess/analysing
-  -> /results
+| Capability | How Gemma 4 Is Used |
+|---|---|
+| **Clinical Risk Reasoning** | Gemma 4 (via Ollama) acts as the AI agent interpreting genomic variants, biometrics, and lifestyle data against South Asian cardiac epidemiology |
+| **Structured JSON Output** | `format: 'json'` in the Ollama API enforces strict schema adherence for reliable downstream parsing |
+| **Multilingual Health Equity** | Generates both English and Hindi (`hi-IN`) patient-facing explanations — bridging the language barrier for 600M+ Hindi speakers |
+| **Local-First Privacy** | Genome data, biometrics, and health markers never leave the user's machine — Gemma 4 runs entirely via local Ollama |
+| **Domain-Specific Calibration** | System prompt encodes AHA 2018 SA multipliers, AlphaMissense gene weights, and MASALA Study findings for grounded clinical reasoning |
+
+## What the App Does
+
+- **Standard health markers** — age, sex, blood pressure, cholesterol, BMI, smoking, BP medication, diabetes status
+- **Camera-based rPPG** — 30-second facial scan for heart rate and HRV estimation (WebRTC), with demo mode fallback
+- **Client-side genome parsing** — 23andMe `.txt` file → rsID extraction entirely in-browser (no upload to server)
+- **Cardiac variant screening** — focused AlphaMissense-inspired lookup: `LPA`, `MYBPC3`, `LDLR`, `PCSK9`, `APOB`, `MYH7`, `SCN5A`, `TTN`
+- **Dual-score comparison** — Framingham (Western) vs CardiacAI (SA-calibrated) side by side
+- **AI-powered analysis** — Gemma 4 generates patient-facing findings, action plans, family recommendations, and citations
+- **Hindi TTS** — browser-native speech synthesis for patient accessibility
+- **3D protein viewer** — AlphaFold PDB visualization with mutation highlighting via 3Dmol.js
+
+## Architecture
+
+```
+┌───────────────────────────────────────────────────┐
+│                  Browser (Client)                  │
+│                                                   │
+│  WebRTC Camera → rPPG Engine → Heart Rate / HRV   │
+│  23andMe .txt → Genome Parser → Variant Lookup    │
+│  Health Markers + Lifestyle → Risk Calculator     │
+│  localStorage / IndexedDB (all data stays local)  │
+└─────────────────────┬─────────────────────────────┘
+                      │ POST /api/analyse
+                      ▼
+┌───────────────────────────────────────────────────┐
+│              Next.js API Route (Server)            │
+│                                                   │
+│  Ollama Node.js Client → ollama.chat()            │
+│  Model: gemma4 | format: json                     │
+│  System prompt: SA-calibrated cardiac agent       │
+│  Fallback: pre-cached Ramesh JSON (demo-safe)     │
+└─────────────────────┬─────────────────────────────┘
+                      │
+                      ▼
+┌───────────────────────────────────────────────────┐
+│              Ollama (Local Server)                  │
+│                                                   │
+│  Gemma 4 model running on localhost:11434          │
+│  No cloud. No API keys. No data exfiltration.     │
+└───────────────────────────────────────────────────┘
 ```
 
-There is also a voice assessment page at `/assess/voice`. In the current flow it is not linked from the main path; it is implemented as a visual stub with a neutral hardcoded score.
+## User Flow
 
-## Tech stack
+```
+Landing → /assess/vitals → /assess/camera → /assess/genome → /assess/lifestyle → /assess/analysing → /results
+```
 
-- Framework: Next.js App Router, React, TypeScript
-- Styling: Tailwind CSS v4, custom CSS variables, shadcn-style component setup
-- Animation and UI helpers: Framer Motion, Lucide React, Base UI
-- AI analysis: Anthropic SDK through `app/api/analyse/route.ts`
-- 3D protein rendering: `3dmol`
-- Client persistence: `localStorage` and IndexedDB
-- Browser APIs: WebRTC camera access and `window.speechSynthesis`
+## Tech Stack
 
-## Project structure
+| Layer | Choice | Notes |
+|---|---|---|
+| Frontend | Next.js 16 App Router + Tailwind v4 + shadcn | Mobile-first, TypeScript |
+| AI Agent | **Gemma 4 via Ollama** | Local inference, strict JSON, SA-calibrated prompt |
+| Heart Rate/HRV | rPPG via face-api.js (WebRTC) | Demo-mode toggle for unreliable lighting |
+| Genome Parser | Plain JavaScript | 23andMe .txt → rsID, client-side only |
+| Variant Lookup | AlphaMissense-inspired | Focused cardiac gene table, IndexedDB |
+| 3D Protein | 3Dmol.js + AlphaFold PDB | Red sphere on mutation residue, auto-rotate |
+| Hindi TTS | `window.speechSynthesis` | hi-IN voice, browser-native |
+| Animation | Framer Motion | Micro-interactions and transitions |
 
-```text
+## Local Setup
+
+### Prerequisites
+
+1. **Install Ollama** (if not already installed):
+   ```bash
+   brew install ollama
+   ```
+
+2. **Pull the Gemma 4 model**:
+   ```bash
+   ollama pull gemma4
+   ```
+
+3. **Start the Ollama server** (runs on `localhost:11434`):
+   ```bash
+   ollama serve
+   ```
+
+### Run CardiacAI
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+### Environment Variables (optional)
+
+No API keys required. All config is optional:
+
+```bash
+# Override Ollama server address (default: http://localhost:11434)
+OLLAMA_HOST=http://localhost:11434
+
+# Override model name (default: gemma4)
+OLLAMA_MODEL=gemma4
+```
+
+## Project Structure
+
+```
 app/
   page.tsx                  Landing page and assessment reset
   assess/
@@ -57,7 +137,7 @@ app/
     lifestyle/page.tsx      Lifestyle questionnaire
     analysing/page.tsx      Client-side scoring and API call
     voice/page.tsx          Voice biomarker UI stub
-  api/analyse/route.ts      Anthropic-backed analysis endpoint
+  api/analyse/route.ts      Gemma 4 (Ollama) analysis endpoint
   results/page.tsx          Score comparison and recommendations
 
 components/
@@ -68,97 +148,55 @@ components/
   VoiceStub.tsx             Stubbed voice analysis UI
 
 lib/
+  agent-prompt.ts           Gemma 4 system prompt (SA-calibrated cardiac agent)
   alphamissense.ts          Focused cardiac rsID lookup table
   genome-parser.ts          23andMe text parser
+  risk-calculator.ts        Framingham and CardiacAI score logic
+  rppg-engine.ts            rPPG signal processing engine
+  ramesh-fallback.ts        Pre-cached demo result (Gemma 4 inference fallback)
   store.ts                  Assessment/result types and browser storage
   tts.ts                    Hindi/English browser speech helpers
-  agent-prompt.ts           Analysis system prompt, ignored by git
-  risk-calculator.ts        Framingham and CardiacAI score logic, ignored by git
-  rppg-engine.ts            rPPG signal processing engine, ignored by git
-  ramesh-fallback.ts        Cached demo result and Hindi TTS text, ignored by git
 
 public/pdb/
   P08519.pdb                Local LPA protein structure
   Q14896.pdb                Local MYBPC3 protein structure
 ```
 
-## Local setup
+## Privacy Model
 
-Install dependencies:
+- **All genome parsing happens client-side** — the raw `.txt` file never leaves the browser
+- Health markers, vitals, and results stored in browser `localStorage`
+- Variant lookup table cached in IndexedDB
+- Only the assessment payload and flagged variant identifiers are sent to the **local** `/api/analyse` route
+- Gemma 4 runs via **local Ollama** — no cloud API, no data exfiltration
+- Zero API keys required
 
-```bash
-npm install
-```
+## Demo Notes
 
-Create `.env.local`:
+- Camera scanning uses real browser camera access when available; silently falls back to demo mode
+- Genome step includes a built-in demo genome path that flags `LPA` and `MYBPC3`
+- If Ollama / Gemma 4 is unavailable, pre-cached "Ramesh, 38" fallback loads instantly (demo never breaks)
+- Hindi summary playback via browser-native speech synthesis
+- WhatsApp family-share section is a mock UI (not a live integration)
+- 3D protein viewer tries local PDB files first, falls back to AlphaFold EBI URLs
 
-```bash
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
+## Data Sources
 
-Run the development server:
+| Source | Use | License |
+|---|---|---|
+| [AlphaMissense (DeepMind)](https://zenodo.org/records/8208688) | Variant pathogenicity predictions | CC-BY 4.0 |
+| [AlphaFold DB](https://alphafold.ebi.ac.uk) | Protein PDB structures | CC-BY 4.0 |
+| [ClinVar (NCBI)](https://www.ncbi.nlm.nih.gov/clinvar/) | Variant–disease cross-reference | Public domain |
+| [1000 Genomes](https://www.internationalgenome.org/) | Demo genome (GIH/PJL) | Open access |
 
-```bash
-npm run dev
-```
+## Key Citations
 
-Open:
+- AHA 2018 SA Statement — *Circulation* 138:e585 — [doi:10.1161/CIR.0000000000000580](https://doi.org/10.1161/CIR.0000000000000580)
+- MASALA Study — UCSF/Northwestern — [masalastudy.org](https://masalastudy.org/)
+- AlphaMissense — *Science* 2023 — [doi:10.1126/science.adg7492](https://doi.org/10.1126/science.adg7492)
+- Dhandapany et al. MYBPC3 — *Nature Genetics* 2009 — [doi:10.1038/ng.309](https://doi.org/10.1038/ng.309)
+- *The Brown Heart* — Drs. Nirmal & Renu Joshi, JioHotstar 2025
 
-```text
-http://localhost:3000
-```
+## Medical Disclaimer
 
-Build for production:
-
-```bash
-npm run build
-npm run start
-```
-
-Run linting:
-
-```bash
-npm run lint
-```
-
-## Important local files
-
-Several core files are intentionally ignored by git because they contain proprietary prompt, scoring, signal-processing, or demo logic:
-
-- `lib/agent-prompt.ts`
-- `lib/risk-calculator.ts`
-- `lib/rppg-engine.ts`
-- `lib/ramesh-fallback.ts`
-- `CLAUDE.md`
-
-The app will not build without the ignored `lib/*.ts` files listed above. Keep them available in the local workspace or provide safe replacements before deploying from a clean clone.
-
-## Analysis model
-
-The browser pre-computes two scores before calling the API:
-
-- Framingham-style baseline from standard markers only.
-- CardiacAI score that applies a South Asian multiplier and adds variant, HRV, voice, family history, sleep, and sitting-time modifiers.
-
-The `/api/analyse` route sends those values plus the assessment payload to Anthropic and expects strict JSON matching `AnalysisResult` in `lib/store.ts`. If the API fails, times out, or returns invalid JSON, the app returns the cached `RAMESH_FALLBACK` result so the demo can continue.
-
-## Privacy model
-
-- Standard health markers, vitals, lifestyle answers, and final results are stored in browser `localStorage`.
-- Genome parsing happens client-side.
-- The focused variant lookup table is initialized in IndexedDB.
-- The full uploaded genome file is not sent to the server by the current genome upload flow.
-- Only the selected assessment payload and flagged variant identifiers are sent to `/api/analyse`.
-
-## Demo notes
-
-- Camera scanning uses real browser camera access when available.
-- If camera access fails, `RPPGCamera` silently switches to demo mode.
-- The genome step includes a built-in demo genome path that flags `LPA` and `MYBPC3`.
-- The results page can read the Hindi summary through browser-native speech synthesis.
-- The WhatsApp family-share section is a mock UI state, not a live integration.
-- The 3D viewer tries local PDB files first and falls back to AlphaFold EBI URLs.
-
-## Medical disclaimer
-
-CardiacAI is a screening and education prototype. It does not diagnose disease, replace clinical judgment, or provide emergency medical advice. Any high-risk finding should be reviewed with a qualified clinician using named clinical tests and standard medical evaluation.
+CardiacAI is a screening and education prototype. It does not diagnose disease, replace clinical judgment, or provide emergency medical advice. Any high-risk finding should be reviewed with a qualified clinician using named clinical tests and standard medical evaluation. Same category as Apple Watch ECG — it says "show this to a doctor," it doesn't say "you have a condition." We route, we don't diagnose.

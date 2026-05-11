@@ -82,7 +82,7 @@ export default function AnalysingPage() {
       sittingHoursPerDay: assessment.lifestyle?.sittingHoursPerDay ?? 6,
     });
 
-    // Call Claude API with pre-computed scores
+    // Call Gemma 4 (Ollama) API with pre-computed scores
     try {
       const payload = {
         basic_markers: {
@@ -117,7 +117,7 @@ export default function AnalysingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(30000), // Local Ollama inference needs more time than cloud APIs
       });
 
       const result = await res.json();

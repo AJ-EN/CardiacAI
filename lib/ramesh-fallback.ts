@@ -1,7 +1,7 @@
 import type { AnalysisResult } from "./store";
 
 // Pre-validated hardcoded response for "Ramesh, 38" demo path.
-// Used when live Claude API call fails or is slow on stage.
+// Used when local Gemma 4 (Ollama) inference fails or is slow on stage.
 // This is the kill shot: Framingham 4% LOW vs CardiacAI 71 HIGH.
 export const RAMESH_FALLBACK: AnalysisResult = {
   cardiacai_score: 71,

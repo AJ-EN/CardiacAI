@@ -1,4 +1,4 @@
-# CardiacAI — CLAUDE.md
+# CardiacAI — AGENTS.md
 
 > "Same patient. Two scores. One of them is true."
 > Gemma 4 Good Hackathon · Health & Sciences + Ollama Tracks
