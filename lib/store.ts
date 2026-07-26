@@ -1,5 +1,7 @@
 "use client";
 
+import type { Zygosity } from "./cardiac-panel";
+
 export interface BasicMarkers {
   age: number;
   sex: "male" | "female";
@@ -27,12 +29,27 @@ export interface LifestyleData {
   redMeatFrequency: "never" | "rarely" | "weekly" | "daily";
 }
 
+/** One panel variant, called against the uploaded genotype. */
+export interface StoredVariantCall {
+  rsid: string;
+  gene: string;
+  /** Genotype as reported by the source file; null when the SNP was not on the array. */
+  genotype: string | null;
+  zygosity: Zygosity;
+  riskAlleleCount: 0 | 1 | 2;
+  points: number;
+}
+
 export interface AssessmentData {
   basicMarkers: BasicMarkers | null;
   vitals: Vitals | null;
   voiceScore: number;
-  variants: string[]; // rsIDs flagged as pathogenic
-  variantsScreened: number; // total rsIDs actually read from the genome file (0 if none uploaded)
+  /** Every panel variant with its call — including non-carriers and not-assayed. */
+  variantCalls: StoredVariantCall[];
+  /** Capped total of the called variants' triage points. */
+  variantPoints: number;
+  /** Total SNPs actually read from the genome file (0 if none uploaded). */
+  variantsScreened: number;
   lifestyle: LifestyleData | null;
 }
 
@@ -49,6 +66,12 @@ export interface AnalysisResult {
     uniprot_id: string;
     residue_position: number;
     action: string;
+    /** Genotype evidence, present on findings derived from an actual variant call. */
+    genotype?: string;
+    zygosity?: string;
+    clinvar?: string;
+    /** gnomAD frequency context, so a European-skewed variant cannot read as SA-specific. */
+    frequency_note?: string;
   }>;
   action_plan: string[];
   family_recommendations: string[];
@@ -101,7 +124,8 @@ function emptyAssessment(): AssessmentData {
     basicMarkers: null,
     vitals: null,
     voiceScore: 0,
-    variants: [],
+    variantCalls: [],
+    variantPoints: 0,
     variantsScreened: 0,
     lifestyle: null,
   };

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loadResult, type AnalysisResult } from "@/lib/store";
-import { RAMESH_FALLBACK, RAMESH_TTS_HINDI } from "@/lib/ramesh-fallback";
+import { NOT_ARRAY_DETECTABLE } from "@/lib/cardiac-panel";
 import { speakHindi } from "@/lib/tts";
 import dynamic from "next/dynamic";
 
@@ -76,8 +76,7 @@ export default function ResultsPage() {
     if (result && !ttsPlayed) {
       setTtsPlayed(true);
       setTimeout(() => {
-        // Prefer Gemma 4's generated Hindi text, fall back to hardcoded Ramesh TTS
-        speakHindi(result.tts_hindi || RAMESH_TTS_HINDI);
+        if (result.tts_hindi) speakHindi(result.tts_hindi);
       }, 1200);
     }
   }, [result, ttsPlayed]);
@@ -106,7 +105,7 @@ export default function ResultsPage() {
         </Link>
         <button
           type="button"
-          onClick={() => speakHindi(result.tts_hindi || RAMESH_TTS_HINDI)}
+          onClick={() => result.tts_hindi && speakHindi(result.tts_hindi)}
           className="text-xs font-(family-name:--font-jetbrains) text-[var(--navy-mid)] hover:text-white transition-colors uppercase tracking-wider"
         >
           ▶ Listen in Hindi
@@ -241,7 +240,7 @@ export default function ResultsPage() {
             }}
           >
             <p className="text-[var(--risk-dim)] text-sm leading-relaxed">
-              <strong className="text-[var(--risk)]">&quot;Same patient. Two scores. One of them is true.&quot;</strong>
+              <strong className="text-[var(--risk)]">Why the two numbers differ.</strong>
               {" "}{result.gap_explanation}
             </p>
           </div>
@@ -267,6 +266,14 @@ export default function ResultsPage() {
             What CardiacAI found
           </h3>
           <div className="space-y-3">
+            {result.top_findings.length === 0 && (
+              <div className="rounded-lg border border-[var(--border)] bg-white p-4">
+                <p className="text-[var(--muted-foreground)] text-sm leading-relaxed">
+                  Nothing was flagged in the screened panel and no vitals crossed a threshold. That
+                  is not the same as a clean bill of health — see what this screen cannot see, below.
+                </p>
+              </div>
+            )}
             {result.top_findings.map((f, i) => (
               <div
                 key={i}
@@ -289,8 +296,50 @@ export default function ResultsPage() {
                   </span>
                 </div>
                 <p className="text-[var(--foreground)] text-sm mb-2">{f.plain_explanation}</p>
+
+                {(f.genotype || f.clinvar) && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {f.genotype && (
+                      <span className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--border)] text-[var(--foreground)]">
+                        genotype {f.genotype}
+                        {f.zygosity ? ` · ${f.zygosity.replace("_", " ")}` : ""}
+                      </span>
+                    )}
+                    {f.clinvar && (
+                      <span className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--border)] text-[var(--foreground)]">
+                        ClinVar: {f.clinvar}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {f.frequency_note && (
+                  <p className="text-[var(--muted-foreground)] text-[11px] mb-2 leading-relaxed">
+                    {f.frequency_note}
+                  </p>
+                )}
+
                 <p className="text-xs font-(family-name:--font-jetbrains) text-[var(--navy)] bg-[var(--navy-light)] rounded px-3 py-2">
                   → {f.action}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Honest limits of the screen ── */}
+        <section>
+          <h3 className="font-(family-name:--font-jetbrains) text-xs uppercase tracking-wider text-[var(--muted-foreground)] mb-3">
+            What this screen cannot see
+          </h3>
+          <div className="rounded-lg border border-dashed border-[var(--border2)] bg-white p-4 space-y-3">
+            {NOT_ARRAY_DETECTABLE.map((n) => (
+              <div key={n.label}>
+                <p className="font-(family-name:--font-jetbrains) text-xs font-semibold text-[var(--foreground)] mb-1">
+                  {n.label}
+                </p>
+                <p className="text-[var(--muted-foreground)] text-xs leading-relaxed">
+                  {n.why} {n.relevance}
                 </p>
               </div>
             ))}

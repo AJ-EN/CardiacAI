@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Ollama } from "ollama";
 import { CARDIACAI_SYSTEM_PROMPT, ANALYSE_USER_PROMPT } from "@/lib/agent-prompt";
-import { RAMESH_FALLBACK } from "@/lib/ramesh-fallback";
 
 // Ollama runs locally — no API key needed.
 // Default: http://localhost:11434  Override with OLLAMA_HOST env var.
@@ -46,7 +45,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error("CardiacAI API error:", err);
-    // Serve pre-cached Ramesh fallback — demo never breaks on stage
-    return NextResponse.json(RAMESH_FALLBACK);
+    // Signal the failure honestly. The client holds a result computed from the
+    // patient's own data and will show that instead. Returning a pre-written
+    // example with a 200 would make every patient look like the example.
+    return NextResponse.json(
+      { error: "local_inference_unavailable" },
+      { status: 503 }
+    );
   }
 }

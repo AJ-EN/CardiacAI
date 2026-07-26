@@ -2,15 +2,26 @@
 
 > **"Same patient. Two scores. One of them is true."**
 
-CardiacAI is a local-first, privacy-preserving AI co-clinician that catches the cardiac risk Western tools systematically miss in South Asian populations. It runs entirely on-device using **Google Gemma 4** via **Ollama** — no cloud APIs, no data leaving the machine.
+CardiacAI is a local-first, privacy-preserving cardiac risk screening prototype for South Asian populations. It runs entirely on-device using **Google Gemma 4** via **Ollama** — no cloud APIs, no data leaving the machine.
 
 ---
 
 ## The Problem
 
-Standard cardiovascular risk calculators (Framingham, ASCVD, QRISK) were built on Western cohorts. They **systematically under-predict risk by ~50%** for the 2 billion South Asians worldwide ([AHA 2018, Circulation 138:e585](https://doi.org/10.1161/CIR.0000000000000580); [MASALA Study, UCSF/Northwestern](https://masalastudy.org/)).
+Standard cardiovascular risk calculators (Framingham, ASCVD, QRISK) were built on Western cohorts. They under-predict risk for South Asians, who develop coronary disease earlier and at lower BMI than Western reference cohorts ([AHA 2018, Circulation 138:e1](https://doi.org/10.1161/CIR.0000000000000580); [MASALA Study, UCSF/Northwestern](https://masalastudy.org/)). Note QRISK3 does carry a South Asian ethnicity term; the US Pooled Cohort Equations do not.
 
-A 38-year-old Indian male with normal blood values, pathogenic LPA and MYBPC3 variants scores **4% (LOW)** on Framingham — and **71 (HIGH)** on CardiacAI. The difference: South-Asian-specific genomic signals that standard tools cannot see.
+A 38-year-old Indian male with unremarkable blood values who carries a pathogenic *APOB* variant scores **4% (LOW)** on Framingham. Framingham reads blood pressure, cholesterol, smoking and age — it has no way to see an inherited lipid disorder, and no South Asian term.
+
+## Scientific Honesty
+
+This is a **prototype screening heuristic, not a validated clinical instrument.** It has no derivation cohort, no discrimination statistic, and no calibration curve. The Concern Index is a triage weighting, not a probability, and it is on a different scale from Framingham. Treat both numbers as prompts to talk to a clinician, not as competing estimates of the same quantity.
+
+Specific limits worth stating up front:
+
+- **The variant panel is small and hand-curated.** Four variants across *LDLR*, *APOB* and *LPA*, each verified against NCBI dbSNP and ClinVar, with gnomAD v4 allele frequencies. It is not a comprehensive cardiac gene screen.
+- **None of the panel variants are South-Asian-enriched.** All four are more common in Europeans, or absent from South Asian reference populations. The genuinely SA-specific signals — the *MYBPC3* Δ25bp deletion and *LPA* KIV-2 copy number — are structural variants that genotyping arrays physically cannot detect. The app says so on screen rather than implying coverage it does not have.
+- **The gene weights are a heuristic ordering, not derived effect sizes.**
+- **HRV from a webcam is indicative only.** rPPG at 30fps cannot resolve rMSSD to ECG precision.
 
 ## How Gemma 4 Powers CardiacAI
 
@@ -20,16 +31,16 @@ A 38-year-old Indian male with normal blood values, pathogenic LPA and MYBPC3 va
 | **Structured JSON Output** | `format: 'json'` in the Ollama API enforces strict schema adherence for reliable downstream parsing |
 | **Multilingual Health Equity** | Generates both English and Hindi (`hi-IN`) patient-facing explanations — bridging the language barrier for 600M+ Hindi speakers |
 | **Local-First Privacy** | Genome data, biometrics, and health markers never leave the user's machine — Gemma 4 runs entirely via local Ollama |
-| **Domain-Specific Calibration** | System prompt encodes AHA 2018 SA multipliers, AlphaMissense gene weights, and MASALA Study findings for grounded clinical reasoning |
+| **Constrained Narration** | The model receives already-computed scores and variant calls and writes only the plain-language framing. Scores, findings and citations are pinned by the application and any the model invents are discarded |
 
 ## What the App Does
 
 - **Standard health markers** — age, sex, blood pressure, cholesterol, BMI, smoking, BP medication, diabetes status
 - **Camera-based rPPG** — 30-second facial scan for heart rate and HRV estimation (WebRTC), with demo mode fallback
 - **Client-side genome parsing** — 23andMe `.txt` file → rsID extraction entirely in-browser (no upload to server)
-- **Cardiac variant screening** — focused AlphaMissense-inspired lookup: `LPA`, `MYBPC3`, `LDLR`, `PCSK9`, `APOB`, `MYH7`, `SCN5A`, `TTN`
+- **Genotype-aware variant calling** — a ClinVar-verified panel across `LDLR`, `APOB` and `LPA`. Risk alleles are matched allele by allele on the GRCh38 plus strand, so "not assayed", "no call", "non-carrier", "heterozygous" and "homozygous" are distinct outcomes
 - **Dual-score comparison** — Framingham (Western) vs CardiacAI (SA-calibrated) side by side
-- **AI-powered analysis** — Gemma 4 generates patient-facing findings, action plans, family recommendations, and citations
+- **Constrained AI narration** — Gemma 4 writes the plain-language framing. Scores, variant findings and citations are computed by the application and pinned; anything the model invents for those fields is discarded
 - **Hindi TTS** — browser-native speech synthesis for patient accessibility
 - **3D protein viewer** — AlphaFold PDB visualization with mutation highlighting via 3Dmol.js
 
@@ -40,7 +51,7 @@ A 38-year-old Indian male with normal blood values, pathogenic LPA and MYBPC3 va
 │                  Browser (Client)                  │
 │                                                   │
 │  WebRTC Camera → rPPG Engine → Heart Rate / HRV   │
-│  23andMe .txt → Genome Parser → Variant Lookup    │
+│  23andMe .txt → Parser → Genotype-aware calling   │
 │  Health Markers + Lifestyle → Risk Calculator     │
 │  localStorage / IndexedDB (all data stays local)  │
 └─────────────────────┬─────────────────────────────┘
@@ -52,7 +63,7 @@ A 38-year-old Indian male with normal blood values, pathogenic LPA and MYBPC3 va
 │  Ollama Node.js Client → ollama.chat()            │
 │  Model: gemma4 | format: json                     │
 │  System prompt: SA-calibrated cardiac agent       │
-│  Fallback: pre-cached Ramesh JSON (demo-safe)     │
+│  On failure: 503 (client renders local result)    │
 └─────────────────────┬─────────────────────────────┘
                       │
                       ▼
@@ -75,10 +86,10 @@ Landing → /assess/vitals → /assess/camera → /assess/genome → /assess/lif
 | Layer | Choice | Notes |
 |---|---|---|
 | Frontend | Next.js 16 App Router + Tailwind v4 + shadcn | Mobile-first, TypeScript |
-| AI Agent | **Gemma 4 via Ollama** | Local inference, strict JSON, SA-calibrated prompt |
+| AI Agent | **Gemma 4 via Ollama** | Local inference, strict JSON, narration-only role |
 | Heart Rate/HRV | rPPG via face-api.js (WebRTC) | Demo-mode toggle for unreliable lighting |
 | Genome Parser | Plain JavaScript | 23andMe .txt → rsID, client-side only |
-| Variant Lookup | AlphaMissense-inspired | Focused cardiac gene table, IndexedDB |
+| Variant Calling | Curated dbSNP/ClinVar panel | Genotype-aware, plus-strand risk alleles, IndexedDB |
 | 3D Protein | 3Dmol.js + AlphaFold PDB | Red sphere on mutation residue, auto-rotate |
 | Hindi TTS | `window.speechSynthesis` | hi-IN voice, browser-native |
 | Animation | Framer Motion | Micro-interactions and transitions |
@@ -131,7 +142,7 @@ app/
   assess/
     vitals/page.tsx         Basic health marker form
     camera/page.tsx         rPPG scan step
-    genome/page.tsx         Genome upload and variant lookup step
+    genome/page.tsx         Genome upload and genotype-aware calling step
     lifestyle/page.tsx      Lifestyle questionnaire
     analysing/page.tsx      Client-side scoring and API call
     voice/page.tsx          Voice biomarker UI stub
@@ -146,12 +157,12 @@ components/
   VoiceStub.tsx             Stubbed voice analysis UI
 
 lib/
-  agent-prompt.ts           Gemma 4 system prompt (SA-calibrated cardiac agent)
-  alphamissense.ts          Focused cardiac rsID lookup table
-  genome-parser.ts          23andMe text parser
+  agent-prompt.ts           Gemma 4 system prompt (narration only, scores pinned)
+  cardiac-panel.ts          ClinVar-verified panel + genotype-aware calling
+  build-result.ts           Builds the result from the patient's own calls
+  genome-parser.ts          23andMe text parser (preserves genotype)
   risk-calculator.ts        Framingham and CardiacAI score logic
   rppg-engine.ts            rPPG signal processing engine
-  ramesh-fallback.ts        Pre-cached demo result (Gemma 4 inference fallback)
   store.ts                  Assessment/result types and browser storage
   tts.ts                    Hindi/English browser speech helpers
 
@@ -172,8 +183,8 @@ public/pdb/
 ## Demo Notes
 
 - Camera scanning uses real browser camera access when available; silently falls back to demo mode
-- Genome step includes a built-in demo genome path that flags `LPA` and `MYBPC3`
-- If Ollama / Gemma 4 is unavailable, pre-cached "Ramesh, 38" fallback loads instantly (demo never breaks)
+- Genome step includes illustrative demo genotypes at the four verified panel positions (one pathogenic carrier, one risk allele, two non-carriers). These are example calls, not a real individual's genome
+- If Ollama / Gemma 4 is unavailable, `/api/analyse` returns 503 and the client renders a result computed entirely from the patient's own data. It never substitutes a pre-written example
 - Hindi summary playback via browser-native speech synthesis
 - WhatsApp family-share section is a mock UI (not a live integration)
 - 3D protein viewer tries local PDB files first, falls back to AlphaFold EBI URLs
@@ -182,7 +193,9 @@ public/pdb/
 
 | Source | Use | License |
 |---|---|---|
-| [AlphaMissense (DeepMind)](https://zenodo.org/records/8208688) | Variant pathogenicity predictions | CC-BY 4.0 |
+| [NCBI ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) | Variant classifications for every panel entry | Public domain |
+| [gnomAD v4](https://gnomad.broadinstitute.org/) | Population allele frequencies | CC0 |
+| [NCBI dbSNP](https://www.ncbi.nlm.nih.gov/snp/) | Reference/alternate alleles, strand orientation | Public domain |
 | [AlphaFold DB](https://alphafold.ebi.ac.uk) | Protein PDB structures | CC-BY 4.0 |
 | [ClinVar (NCBI)](https://www.ncbi.nlm.nih.gov/clinvar/) | Variant–disease cross-reference | Public domain |
 | [1000 Genomes](https://www.internationalgenome.org/) | Demo genome (GIH/PJL) | Open access |
@@ -191,7 +204,7 @@ public/pdb/
 
 - AHA 2018 SA Statement — *Circulation* 138:e585 — [doi:10.1161/CIR.0000000000000580](https://doi.org/10.1161/CIR.0000000000000580)
 - MASALA Study — UCSF/Northwestern — [masalastudy.org](https://masalastudy.org/)
-- AlphaMissense — *Science* 2023 — [doi:10.1126/science.adg7492](https://doi.org/10.1126/science.adg7492)
+- Clarke et al. — *N Engl J Med* 2009;361:2518 — LPA variants and coronary disease
 - Dhandapany et al. MYBPC3 — *Nature Genetics* 2009 — [doi:10.1038/ng.309](https://doi.org/10.1038/ng.309)
 - *The Brown Heart* — Drs. Nirmal & Renu Joshi, JioHotstar 2025
 

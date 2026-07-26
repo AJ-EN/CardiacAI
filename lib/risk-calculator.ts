@@ -89,7 +89,11 @@ export function computeCardiacAIScore(inputs: RiskInputs): number {
   // Step 1: ASCVD baseline from Framingham
   let score = computeFraminghamScore(m);
 
-  // Step 2: AHA 2018 SA multiplier × 1.5
+  // Step 2: South Asian adjustment.
+  // HEURISTIC. The 2018 ACC/AHA guidance treats South Asian ancestry as a
+  // qualitative risk-enhancing factor; it does not specify a 1.5 multiplier.
+  // This factor is a triage choice, not a value derived from that statement,
+  // and must not be cited as such.
   score = score * 1.5;
 
   // Step 3: Variant points (passed in from AlphaMissense lookup)

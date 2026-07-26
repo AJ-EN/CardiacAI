@@ -4,8 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loadAssessment, saveResult } from "@/lib/store";
 import { computeFraminghamScore, computeCardiacAIScore } from "@/lib/risk-calculator";
-import { lookupVariants } from "@/lib/alphamissense";
-import { RAMESH_FALLBACK } from "@/lib/ramesh-fallback";
+import { buildLocalResult } from "@/lib/build-result";
 
 const MESSAGES = [
   "Reading your biology...",
@@ -65,32 +64,31 @@ export default function AnalysingPage() {
     const assessment = loadAssessment();
 
     if (!assessment.basicMarkers) {
-      saveResult(RAMESH_FALLBACK);
+      // Entered out of order. Send them back rather than displaying an
+      // example patient's results as though they were theirs.
+      router.push("/assess/vitals");
       return;
     }
 
-    // Pre-compute scores on client so API call is optional.
-    // A genome with no flagged variants must score 0 — never a default.
-    let variantPoints = 0;
-    try {
-      const lookup = await lookupVariants(assessment.variants ?? []);
-      variantPoints = lookup.totalPoints;
-    } catch {
-      variantPoints = 0;
-    }
+    // Points come from the genotype calls made at the genome step. No genome
+    // means no variant points — never a default.
+    const variantPoints = assessment.variantPoints ?? 0;
 
     const framingham = computeFraminghamScore(assessment.basicMarkers);
     const cardiacai = computeCardiacAIScore({
       basicMarkers: assessment.basicMarkers,
       variantPoints,
-      hrvMs: assessment.vitals?.hrv ?? 35,
+      hrvMs: assessment.vitals?.hrv ?? 0, // 0 means not measured, not "normal"
       voiceScore: assessment.voiceScore ?? 0,
       familyHistoryBefore55: assessment.lifestyle?.familyHistoryBefore55 ?? false,
       avgSleepHours: assessment.lifestyle?.avgSleepHours ?? 7,
       sittingHoursPerDay: assessment.lifestyle?.sittingHoursPerDay ?? 6,
     });
 
-    // Call Gemma 4 (Ollama) API with pre-computed scores
+    // Everything that must be true about this patient is computed here, from
+    // their own data. The model is asked only to phrase it.
+    const local = buildLocalResult(assessment, framingham, cardiacai);
+
     try {
       const payload = {
         basic_markers: {
@@ -106,7 +104,13 @@ export default function AnalysingPage() {
           on_bp_meds: assessment.basicMarkers.onBpMeds,
           diabetic: assessment.basicMarkers.diabetic,
         },
-        variants: assessment.variants ?? [],
+        variant_calls: (assessment.variantCalls ?? []).map((c) => ({
+          gene: c.gene,
+          rsid: c.rsid,
+          genotype: c.genotype,
+          zygosity: c.zygosity,
+          risk_allele_copies: c.riskAlleleCount,
+        })),
         vitals: {
           heart_rate: assessment.vitals?.heartRate ?? 74,
           hrv_rmssd: assessment.vitals?.hrv ?? 28,
@@ -128,11 +132,26 @@ export default function AnalysingPage() {
         signal: AbortSignal.timeout(30000), // Local Ollama inference needs more time than cloud APIs
       });
 
-      const result = await res.json();
-      saveResult(result);
+      if (!res.ok) throw new Error(`analyse returned ${res.status}`);
+      const model = await res.json();
+
+      // The model contributes phrasing only. Scores, tier, variant findings
+      // and citations stay pinned to what was computed from the patient's own
+      // data — those are the things a language model must never invent.
+      saveResult({
+        ...local,
+        gap_explanation: model.gap_explanation || local.gap_explanation,
+        action_plan: Array.isArray(model.action_plan) && model.action_plan.length
+          ? model.action_plan
+          : local.action_plan,
+        family_recommendations: Array.isArray(model.family_recommendations) && model.family_recommendations.length
+          ? model.family_recommendations
+          : local.family_recommendations,
+        tts_hindi: model.tts_hindi || local.tts_hindi,
+      });
     } catch {
-      // API timed out or failed — use Ramesh fallback
-      saveResult(RAMESH_FALLBACK);
+      // Local inference unavailable — show this patient's computed result.
+      saveResult(local);
     }
   };
 

@@ -8,7 +8,7 @@ const STATS = [
   { num: "10–15", label: "years earlier", sub: "South Asians get heart attacks before any other ethnicity" },
   { num: "50%", label: "under-predicted", sub: "Framingham misses half your risk if you're South Asian" },
   { num: "60M", label: "Indians with CAD", sub: "Highest absolute cardiac death toll of any country" },
-  { num: "0", label: "tools calibrated for you", sub: "Not one consumer tool built for South Asian biology — until now" },
+  { num: "0", label: "SA term in ASCVD", sub: "The most-used US risk equation has no South Asian coefficient at all" },
 ];
 
 export default function LandingPage() {
