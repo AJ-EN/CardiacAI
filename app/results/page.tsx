@@ -57,6 +57,12 @@ const SEVERITY_COLOR: Record<string, string> = {
   low:    "var(--safe)",
 };
 
+// Speak the Hindi summary automatically on page load.
+// Off: audio that starts without a user gesture is disruptive, and browsers
+// increasingly block speechSynthesis outside a gesture anyway. The "Listen in
+// Hindi" button is the affordance. Set to true to restore autoplay.
+const AUTOPLAY_HINDI: boolean = false;
+
 export default function ResultsPage() {
   const router = useRouter();
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -73,6 +79,7 @@ export default function ResultsPage() {
   }, [router]);
 
   useEffect(() => {
+    if (!AUTOPLAY_HINDI) return;
     if (result && !ttsPlayed) {
       setTtsPlayed(true);
       setTimeout(() => {
