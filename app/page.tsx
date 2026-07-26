@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 const STATS = [
   { num: "10–15", label: "years earlier", sub: "South Asians get heart attacks before any other ethnicity" },
-  { num: "50%", label: "under-predicted", sub: "Framingham misses half your risk if you're South Asian" },
+  { num: "1.5×", label: "higher CVD risk", sub: "South Asian vs European cohorts — the basis for the adjustment this tool applies" },
   { num: "60M", label: "Indians with CAD", sub: "Highest absolute cardiac death toll of any country" },
   { num: "0", label: "SA term in ASCVD", sub: "The most-used US risk equation has no South Asian coefficient at all" },
 ];

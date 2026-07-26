@@ -88,7 +88,7 @@ Landing → /assess/vitals → /assess/camera → /assess/genome → /assess/lif
 |---|---|---|
 | Frontend | Next.js 16 App Router + Tailwind v4 + shadcn | Mobile-first, TypeScript |
 | AI Agent | **Gemma 4 via Ollama** | Local inference, strict JSON, narration-only role |
-| Heart Rate/HRV | rPPG via face-api.js (WebRTC) | Demo-mode toggle for unreliable lighting |
+| Heart Rate/HRV | rPPG via YCbCr + CHROM (WebRTC) | Demo-mode toggle for unreliable lighting |
 | Genome Parser | Plain JavaScript | 23andMe .txt → rsID, client-side only |
 | Variant Calling | Curated dbSNP/ClinVar panel | Genotype-aware, plus-strand risk alleles, IndexedDB |
 | 3D Protein | 3Dmol.js + AlphaFold PDB | Red sphere on mutation residue, auto-rotate |

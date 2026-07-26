@@ -17,7 +17,7 @@ The demo: same patient, Framingham (1% — LOW) beside the Concern Index, side b
 | Layer | Choice | Notes |
 |---|---|---|
 | Frontend | Next.js 14 + Tailwind + shadcn/ui | App router, mobile-first |
-| Heart Rate/HRV | rPPG via face-api.js (WebRTC) | **Build demo-mode toggle FIRST** — high failure risk under venue lighting |
+| Heart Rate/HRV | rPPG via YCbCr + CHROM (WebRTC) | **Build demo-mode toggle FIRST** — high failure risk under venue lighting |
 | Voice Pipeline | UI stub only | Waveform animation + hardcoded neutral score. Real Meyda.js extraction is CUT. Too fragile. |
 | Genome Parser | Plain JavaScript | 23andMe .txt → rsIDs → tab-split, no library needed |
 | Variant Calling | Curated dbSNP/ClinVar panel → IndexedDB | Genotype-aware, plus-strand risk alleles |
