@@ -8,7 +8,7 @@
 
 CardiacAI is a **South-Asian-calibrated AI co-clinician** for cardiovascular risk screening. It is **not** a diagnosis tool — it is a screening signal (same legal category as Apple Watch ECG). It aims to surface asymptomatic risk that Western-derived tools under-weight for South Asians. It is an unvalidated prototype heuristic: no derivation cohort, no discrimination or calibration statistics.
 
-The demo: same patient, Framingham (4% — LOW) beside the Concern Index, side by side and large, with the verified variant calls that Framingham structurally cannot see. The two numbers are on different scales — the UI says so explicitly rather than implying one refutes the other.
+The demo: same patient, Framingham (1% — LOW) beside the Concern Index, side by side and large, with the verified variant calls that Framingham structurally cannot see. The two numbers are on different scales — the UI says so explicitly rather than implying one refutes the other.
 
 ---
 
@@ -77,7 +77,7 @@ are precisely the ones arrays cannot see — that gap is the honest finding.
 ## Risk Calibration Algorithm
 
 ```
-1. Compute ASCVD baseline from basic_markers
+1. Compute Framingham 10-yr hard CHD risk (NCEP ATP III, sex-specific tables)
 2. Apply SA multiplier × 1.5 — HEURISTIC. The 2018 ACC/AHA guidance treats
    South Asian ancestry as a qualitative risk-enhancing factor; it does NOT
    specify a 1.5 multiplier. Do not cite AHA 2018 as the source of this number.
@@ -133,7 +133,8 @@ Genome: illustrative genotypes at the 4 verified panel positions
   rs10455872 AG (LPA risk allele, 1 copy)
   rs3798220 TT  (non-carrier)
   rs121908030 GG (non-carrier)
-Expected output: Framingham ~4% LOW · Concern Index ~46 (varies with lifestyle answers)
+Expected output: Framingham 1% LOW · Concern Index ~32 (42 if the camera step runs;
+varies with lifestyle answers)
 ```
 
 This is the ONLY demo path. Never accept a judge's personal genome file live.

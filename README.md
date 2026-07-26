@@ -10,7 +10,7 @@ CardiacAI is a local-first, privacy-preserving cardiac risk screening prototype 
 
 Standard cardiovascular risk calculators (Framingham, ASCVD, QRISK) were built on Western cohorts. They under-predict risk for South Asians, who develop coronary disease earlier and at lower BMI than Western reference cohorts ([AHA 2018, Circulation 138:e1](https://doi.org/10.1161/CIR.0000000000000580); [MASALA Study, UCSF/Northwestern](https://masalastudy.org/)). Note QRISK3 does carry a South Asian ethnicity term; the US Pooled Cohort Equations do not.
 
-A 38-year-old Indian male with unremarkable blood values who carries a pathogenic *APOB* variant scores **4% (LOW)** on Framingham. Framingham reads blood pressure, cholesterol, smoking and age — it has no way to see an inherited lipid disorder, and no South Asian term.
+A 38-year-old Indian male with unremarkable blood values who carries a pathogenic *APOB* variant scores **1% (LOW)** on Framingham. Framingham reads blood pressure, cholesterol, smoking and age — it has no way to see an inherited lipid disorder, and no South Asian term.
 
 ## Scientific Honesty
 
@@ -22,6 +22,7 @@ Specific limits worth stating up front:
 - **None of the panel variants are South-Asian-enriched.** All four are more common in Europeans, or absent from South Asian reference populations. The genuinely SA-specific signals — the *MYBPC3* Δ25bp deletion and *LPA* KIV-2 copy number — are structural variants that genotyping arrays physically cannot detect. The app says so on screen rather than implying coverage it does not have.
 - **The gene weights are a heuristic ordering, not derived effect sizes.**
 - **HRV from a webcam is indicative only.** rPPG at 30fps cannot resolve rMSSD to ECG precision.
+- **Framingham is implemented from the NCEP ATP III point tables** (Circulation 2002;106:3143) with sex-specific age, cholesterol, smoking, blood-pressure and risk-conversion tables, and diabetes handled as a CHD risk equivalent. The South Asian ×1.5 adjustment applied afterwards is a heuristic, not a value specified by any guideline.
 
 ## How Gemma 4 Powers CardiacAI
 
