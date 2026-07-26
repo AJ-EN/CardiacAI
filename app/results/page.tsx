@@ -36,12 +36,20 @@ function useCountUp(target: number, duration: number, delay = 0): number {
 
 const ProteinViewer = dynamic(() => import("@/components/ProteinViewer"), { ssr: false });
 
+// The Concern Index is a triage signal, so its tiers name an action, not a risk level
 const RISK_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  low:       { label: "LOW RISK",      color: "var(--safe)",  bg: "var(--safe-light)" },
-  moderate:  { label: "MODERATE RISK", color: "var(--amber)", bg: "var(--amber-light)" },
-  high:      { label: "HIGH RISK",     color: "var(--risk)",  bg: "var(--risk-light)" },
-  very_high: { label: "VERY HIGH",     color: "var(--risk)",  bg: "var(--risk-light)" },
+  low:       { label: "ROUTINE",  color: "var(--safe)",  bg: "var(--safe-light)" },
+  moderate:  { label: "MONITOR",  color: "var(--amber)", bg: "var(--amber-light)" },
+  high:      { label: "ESCALATE", color: "var(--risk)",  bg: "var(--risk-light)" },
+  very_high: { label: "ESCALATE", color: "var(--risk)",  bg: "var(--risk-light)" },
 };
+
+// Standard Framingham 10-year risk stratification
+function framinghamLabel(pct: number): string {
+  if (pct >= 20) return "HIGH RISK";
+  if (pct >= 10) return "INTERMEDIATE";
+  return "LOW RISK";
+}
 
 const SEVERITY_COLOR: Record<string, string> = {
   high:   "var(--risk)",
@@ -123,7 +131,7 @@ export default function ResultsPage() {
                 <span className="text-2xl">%</span>
               </p>
               <p className="font-(family-name:--font-jetbrains) text-sm font-bold text-[var(--safe)] uppercase tracking-wider">
-                LOW RISK
+                {framinghamLabel(result.framingham_score)}
               </p>
               <p className="text-[var(--muted-foreground)] text-xs mt-2">
                 Built on Western cohorts. SA data: minimal.
@@ -136,7 +144,7 @@ export default function ResultsPage() {
               style={{ borderColor: "var(--risk-mid)", background: framing.bg }}
             >
               <p className="font-(family-name:--font-jetbrains) text-xs uppercase tracking-wider text-[var(--muted-foreground)] mb-3">
-                CardiacAI says
+                Concern Index says
               </p>
               <p
                 className="font-(family-name:--font-playfair) text-6xl font-black leading-none mb-2 tabular-nums"
@@ -160,6 +168,10 @@ export default function ResultsPage() {
             </div>
           </div>
 
+          <p className="text-[var(--muted-foreground)] text-xs mt-3 leading-relaxed">
+            Concern Index is a triage signal, not a probability. Different scale from Framingham.
+          </p>
+
           {/* ── Animated risk-axis gap visualization ── */}
           <div className="mt-6 px-1">
             <div className="flex justify-between items-baseline mb-2">
@@ -173,10 +185,10 @@ export default function ResultsPage() {
                   opacity: gapVisible ? 1 : 0,
                 }}
               >
-                +{gapPoints} risk points missed
+                +{gapPoints} point gap between instruments
               </span>
               <span className="font-(family-name:--font-jetbrains) text-[10px] uppercase tracking-[2px] text-[var(--risk)]">
-                CardiacAI reading
+                Concern Index reading
               </span>
             </div>
 

@@ -21,7 +21,7 @@ export default function LandingPage() {
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center max-w-2xl mx-auto">
         <p className="font-(family-name:--font-jetbrains) text-xs text-[#3d5a78] uppercase tracking-[4px] mb-8">
-          Gemma 4 Good Hackathon · Health & Sciences
+          South Asian Cardiac Risk Recalibration
         </p>
 
         <h1 className="font-(family-name:--font-playfair) text-[clamp(48px,10vw,80px)] font-black leading-[1.02] tracking-tight mb-6 text-white">

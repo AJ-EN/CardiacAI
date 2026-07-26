@@ -4,8 +4,6 @@
 
 CardiacAI is a local-first, privacy-preserving AI co-clinician that catches the cardiac risk Western tools systematically miss in South Asian populations. It runs entirely on-device using **Google Gemma 4** via **Ollama** — no cloud APIs, no data leaving the machine.
 
-**Built for the [Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon/overview)** — targeting the Health & Sciences Impact Track and the Ollama Special Technology Track.
-
 ---
 
 ## The Problem

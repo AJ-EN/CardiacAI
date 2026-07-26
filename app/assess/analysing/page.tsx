@@ -19,6 +19,7 @@ export default function AnalysingPage() {
   const router = useRouter();
   const [msgIndex, setMsgIndex] = useState(0);
   const [variantCount, setVariantCount] = useState(0);
+  const [screenedTotal, setScreenedTotal] = useState(0);
   const [done, setDone] = useState(false);
   const hasRun = useRef(false);
 
@@ -30,18 +31,26 @@ export default function AnalysingPage() {
       setMsgIndex((i) => Math.min(i + 1, MESSAGES.length - 1));
     }, 1200);
 
-    // Animate variant counter to 11,406
-    let count = 0;
-    const countTimer = setInterval(() => {
-      count += Math.floor(Math.random() * 600 + 300);
-      setVariantCount(Math.min(count, 11406));
-      if (count >= 11406) clearInterval(countTimer);
-    }, 80);
+    // Animate the counter up to however many variants the genome step actually read.
+    // Zero means no genome was uploaded — the counter is hidden entirely in that case.
+    const total = loadAssessment().variantsScreened ?? 0;
+    setScreenedTotal(total);
+
+    let countTimer: ReturnType<typeof setInterval> | undefined;
+    if (total > 0) {
+      const step = Math.max(1, Math.ceil(total / 25));
+      let count = 0;
+      countTimer = setInterval(() => {
+        count += step;
+        setVariantCount(Math.min(count, total));
+        if (count >= total) clearInterval(countTimer);
+      }, 80);
+    }
 
     runAnalysis().then(() => {
       clearInterval(msgTimer);
       clearInterval(countTimer);
-      setVariantCount(11406);
+      setVariantCount(total);
       setDone(true);
       setTimeout(() => router.push("/results"), 600);
     });
@@ -60,15 +69,14 @@ export default function AnalysingPage() {
       return;
     }
 
-    // Pre-compute scores on client so API call is optional
-    let variantPoints = 40; // default: LPA + MYBPC3 for Ramesh demo path
-    if (assessment.variants && assessment.variants.length > 0) {
-      try {
-        const lookup = await lookupVariants(assessment.variants);
-        variantPoints = lookup.totalPoints;
-      } catch {
-        variantPoints = 40;
-      }
+    // Pre-compute scores on client so API call is optional.
+    // A genome with no flagged variants must score 0 — never a default.
+    let variantPoints = 0;
+    try {
+      const lookup = await lookupVariants(assessment.variants ?? []);
+      variantPoints = lookup.totalPoints;
+    } catch {
+      variantPoints = 0;
     }
 
     const framingham = computeFraminghamScore(assessment.basicMarkers);
@@ -144,15 +152,17 @@ export default function AnalysingPage() {
           </svg>
         </div>
 
-        {/* Variant counter */}
-        <div className="mb-6">
-          <p className="font-(family-name:--font-jetbrains) text-5xl font-bold text-[var(--risk-mid)] tabular-nums">
-            {variantCount.toLocaleString()}
-          </p>
-          <p className="text-white/40 text-sm mt-1 font-(family-name:--font-jetbrains) uppercase tracking-wider">
-            variants screened
-          </p>
-        </div>
+        {/* Variant counter — only shown when a genome was actually screened */}
+        {screenedTotal > 0 && (
+          <div className="mb-6">
+            <p className="font-(family-name:--font-jetbrains) text-5xl font-bold text-[var(--risk-mid)] tabular-nums">
+              {variantCount.toLocaleString()}
+            </p>
+            <p className="text-white/40 text-sm mt-1 font-(family-name:--font-jetbrains) uppercase tracking-wider">
+              variants screened
+            </p>
+          </div>
+        )}
 
         {/* Status message */}
         <p className="text-white/70 text-base min-h-[1.5rem] transition-all duration-500">

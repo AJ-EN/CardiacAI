@@ -50,3 +50,4 @@ lib/ramesh-fallback.ts
 
 # Full strategy, architecture, gene weights, calibration logic
 CLAUDE.md
+.gstack/

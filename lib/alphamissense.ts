@@ -115,7 +115,5 @@ export function getRameshVariants(): string[] {
   return [
     "rs10455872",  // LPA pathogenic
     "rs397516064", // MYBPC3 SA delta25bp
-    // plus ~800 benign rsIDs to make "11,406 variants screened" feel real
-    ...Array.from({ length: 800 }, (_, i) => `rs${1000000 + i}`),
   ];
 }

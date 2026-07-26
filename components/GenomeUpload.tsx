@@ -170,9 +170,8 @@ export default function GenomeUpload({ onComplete }: Props) {
 
     const rsids = getRameshVariants();
     const result = await lookupVariants(rsids);
-    const DISPLAY_TOTAL = 11406;
 
-    await playScanTheater(result.flagged, DISPLAY_TOTAL);
+    await playScanTheater(result.flagged, result.screened);
 
     setFlaggedCount(result.flagged.length);
     setPhase("done");
@@ -181,7 +180,7 @@ export default function GenomeUpload({ onComplete }: Props) {
       rsids,
       flagged: result.flagged,
       variantPoints: result.totalPoints,
-      screened: DISPLAY_TOTAL,
+      screened: result.screened,
     });
   }, [onComplete, playScanTheater]);
 

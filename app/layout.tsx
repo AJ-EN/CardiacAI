@@ -22,8 +22,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CardiacAI — South Asian Cardiac Risk Screening · Powered by Gemma 4",
-  description: "Same patient. Two scores. One of them is true. A local-first, privacy-preserving AI co-clinician powered by Google Gemma 4 via Ollama. Built for the Gemma 4 Good Hackathon.",
+  title: "CardiacAI — South Asian Cardiac Risk Recalibration",
+  description: "A local-first, privacy-preserving cardiac risk screening tool that recalibrates Western risk instruments for South Asian biology. Genome parsing, biometrics, and AI analysis run entirely on your own device.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

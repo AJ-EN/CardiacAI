@@ -32,6 +32,7 @@ export interface AssessmentData {
   vitals: Vitals | null;
   voiceScore: number;
   variants: string[]; // rsIDs flagged as pathogenic
+  variantsScreened: number; // total rsIDs actually read from the genome file (0 if none uploaded)
   lifestyle: LifestyleData | null;
 }
 
@@ -101,6 +102,7 @@ function emptyAssessment(): AssessmentData {
     vitals: null,
     voiceScore: 0,
     variants: [],
+    variantsScreened: 0,
     lifestyle: null,
   };
 }

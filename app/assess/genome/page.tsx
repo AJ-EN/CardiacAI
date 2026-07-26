@@ -15,7 +15,10 @@ export default function GenomePage() {
     variantPoints: number;
     screened: number;
   }) => {
-    saveAssessment({ variants: data.flagged.map((f) => f.rsid) });
+    saveAssessment({
+      variants: data.flagged.map((f) => f.rsid),
+      variantsScreened: data.screened,
+    });
     setTimeout(() => router.push("/assess/lifestyle"), 1000);
   };
 
